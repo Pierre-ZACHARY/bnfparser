@@ -1,0 +1,134 @@
+<module> := <declaration> <module> | ε;
+
+<declaration> := <process-declaration> | <method-declaration> | <enum-declaration> | <struct-declaration>;
+
+<enum-declaration> := enum <declaration-name> { <enum-name-declaration?> } ;
+<enum-name-declaration?> := <enum-name-declaration> | ε;
+<enum-name-declaration> := <declaration-name> , <declaration-name> | <declaration-name>;
+<struct-declaration> := struct <declaration-name> { <struct-atributes-declaration?> };
+<struct-atributes-declaration?> := <struct-atributes-declaration> | ε;
+<struct-atributes-declaration> := <declaration-name> <type-declaration> , <struct-atributes-declaration> | <declaration-name> <type-declaration>;
+<process-declaration> := process <declaration-name> ( <function-parameters-declaration*> ) <block-statement>;
+<method-declaration> := method <declaration-name> ( <function-parameters-declaration*> ) <type-declaration?> <block-statement>;
+
+<function-parameters-declaration*> := <function-parameters-declaration> , <function-parameters-declaration*> | <function-parameters-declaration> | ε;
+<function-parameters-declaration> := <declaration-name> <type-declaration> ;
+
+<type-declaration?> := <type-declaration> | ε;
+<type-declaration> := : <type> \u003c <type> \u003e | : <type> ;
+<type> := <existing-type> | <ptr-access> <existing-type> | <ptr-get> <existing-type> | <ptr-get> <mutable> <existing-type> ;
+
+<block-statement> := { <statement*> } ; | { <statement*> } | <parallel-block-statement>;
+
+<parallel-block-statement> := { <parallel-block-content+> <statement+> } | { <parallel-block-content+> <statement+> } ; ;
+
+# \u007c = |
+<parallel-block-content+> := <statement+> \u007c\u007c <parallel-block-content*>;
+<parallel-block-content*> := <statement+> \u007c\u007c <parallel-block-content*> | ε;
+
+<statement*> := <statement> | ε;
+<statement+> := <statement> ;
+
+<statement> := signal <defined-by-user-variable> ; <statement>
+| signal <defined-by-user-variable>
+| <block-statement> <statement>
+| <block-statement>
+| if ( <boolean-operation> ) <block-statement> <statement>
+| if ( <boolean-operation> ) <block-statement>
+| if ( <boolean-operation> ) <block-statement> else <block-statement> <statement>
+| if ( <boolean-operation> ) <block-statement> else <block-statement>
+| if ( <boolean-operation> ) <statement> else <block-statement> <statement>
+| if ( <boolean-operation> ) <statement> else <block-statement>
+| if ( <boolean-operation> ) <statement> else <statement> ; <statement>
+| if ( <boolean-operation> ) <statement> else <statement>
+| if ( <boolean-operation> ) <statement> ; <statement>
+| if ( <boolean-operation> ) <statement>
+| emit <variable-access> ; <statement>
+| emit <variable-access>
+| watching <variable-access> <block-statement> <statement>
+| watching <variable-access> <block-statement>
+| when <variable-access> <block-statement> <statement>
+| when <variable-access> <block-statement>
+| while ( <boolean-operation> ) <block-statement> <statement>
+| while ( <boolean-operation> ) <block-statement>
+| var <mutable> <declaration-name> <type-declaration> <is-equal-to-attribution?> ; <statement>
+| var <declaration-name> <type-declaration> <is-equal-to-attribution?> ; <statement>
+| var <mutable> <declaration-name> <type-declaration> <is-equal-to-attribution?>
+| var <declaration-name> <type-declaration> <is-equal-to-attribution?>
+| <variable-access> = <attribution> ; <statement>
+| <variable-access> = <attribution>
+| <ptr-get> <defined-by-user-variable> = <attribution> ; <statement>
+| <ptr-get> <defined-by-user-variable> = <attribution>
+| return <attribution>
+| return
+| <function-call> ; <statement>
+| <function-call>;
+
+<variable-access> := <object-attribute-access> | <array-access> | <defined-by-user-variable> | <ptr-access> <defined-by-user-variable>;
+<array-access> := <defined-by-user-variable> [ <expression*> ];
+<object-attribute-access> := <defined-by-user-variable> . <defined-by-user-variable>;
+
+<function-call> := <variable-access> ( <function-parameters*> );
+
+<is-equal-to-attribution?> := = <attribution> | ε;
+<attribution> := <struct-object-instanciation> | <function-call> | <arithmetic-operation> | <boolean-operation> | <array-definition> | <expression>;
+
+<struct-object-instanciation> := <defined-by-user-variable> { <struct-atributes-definition?> };
+<struct-atributes-definition?> := <struct-atributes-definition> | ε;
+<struct-atributes-definition> := <defined-by-user-variable> : <attribution> , <struct-atributes-definition> | <defined-by-user-variable> : <attribution>;
+
+
+<function-parameters*> := <attribution> , <function-parameter+> | <attribution> | ε;
+<function-parameter+> := <attribution> , <function-parameter+> | <attribution>;
+
+<expression> := <string>
+| <int>
+| <float>
+| <bool>
+| <char>
+| <variable-access>
+| <ptr-get> <defined-by-user-variable>
+| ( <expression> );
+
+<boolean-operation> := <boolean-unop> <boolean-operation>
+| <comparable> <boolean-binop> <boolean-operation>
+| ( <boolean-operation> )
+| <comparable>;
+<comparable> := <arithmetic-operation> | <expression>;
+
+<arithmetic-operation> := ( <arithmetic-operation> ) | <add> | <sub> | <mul> | <div> | - <arithmetic-operation> | <num>;
+<add> := <num> + <arithmetic-operation> ;
+<sub> := <num> - <arithmetic-operation>;
+<mul> := <num> * <arithmetic-operation>;
+<div> := <num> / <arithmetic-operation>;
+<num> := <float> | <int> | <function-call> | <variable-access>;
+
+
+<array-definition> := [ <expression*> ];
+<expression*> := <expression> , <expression+> | <expression> | ε;
+<expression+> := <expression> , <expression+> | <expression>;
+
+# n'importe quoi qui commence par une lettre
+<declaration-name> := ^(?!if|while|mut|when|signal|watching|return|var|emit)[a-zA-Z_][a-zA-Z_0-9]*;
+# n'importe quelle variable existante ( dont les nombres )
+<existing-name> := ^[a-zA-Z_0-9]*;
+# n'importe quelle variable existante ( sans les nombres )
+<defined-by-user-variable> := ^(?!if|while|mut|when|signal|watching|return|var|emit)[a-zA-Z_][a-zA-Z_0-9]*;
+<existing-type> := ^[a-zA-Z_][a-zA-Z_0-9]*;
+
+
+<string> := ^".*?";
+<bool> := true | false;
+<binop> := + | - | * | / | % | \u003c | \u003e | \u003c = | \u003e = | = = | ! = | and | or;
+<unop> := - | !;
+<arithmetic-unop> := - ;
+<boolean-unop> := ! ;
+<arithmetic-binop> :=  + | - | * | / | % ;
+<boolean-binop> :=  \u003c | \u003e | \u003c = | \u003e = | = = | ! = | and | or;
+<float> := ^[0-9]*[.][0-9]+;
+<char> := ^['][a-zA-Z]['];
+<int> := ^[0-9]+;
+
+<ptr-access> := *;
+<ptr-get> := &;
+<mutable> := mut;
