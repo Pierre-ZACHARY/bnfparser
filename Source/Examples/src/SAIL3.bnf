@@ -1,0 +1,99 @@
+<module> := <declaration> <module> | ε;
+
+<declaration> := <process-declaration>;
+
+<process-declaration> := process <declaration-name> ( <function-parameters-declaration*> ) <block-statement>;
+
+<function-parameters-declaration*> := <function-parameters-declaration> , <function-parameters-declaration*> | <function-parameters-declaration> | ε;
+<function-parameters-declaration> := <declaration-name> <type-declaration> ;
+
+<type-declaration> := : <existing-type> | : <ptr-access> <existing-type> | : <ptr-get> <existing-type> | : <ptr-get> <mutable> <existing-type> ;
+
+<block-statement> := { <statement*> } | <parallel-block-statement>;
+
+<parallel-block-statement> := { <parallel-block-content+> <statement+> };
+
+# \u007c = |
+<parallel-block-content+> := <statement+> \u007c\u007c <parallel-block-content*>;
+<parallel-block-content*> := <statement+> \u007c\u007c <parallel-block-content*> | ε;
+
+<statement*> := <statement-ending-with-block-statement> <statement*> | <statement> ; <statement+> | <statement> | ε;
+<statement+> := <statement-ending-with-block-statement> <statement*> | <statement> ; <statement+> | <statement> ;
+
+<statement> := signal <defined-by-user-variable>
+| emit <variable-access>
+| var <declaration-name> <type-declaration> <attribution?>
+| <variable-access> = <attribution>
+| <ptr-get> <defined-by-user-variable> = <attribution>
+| return <attribution>
+| <function-call>;
+
+<statement-ending-with-block-statement> := watching <variable-access> <block-statement>
+| when <variable-access> <block-statement>
+| if ( <boolean-operation> ) <block-statement>
+| if ( <boolean-operation> ) <block-statement> else <block-statement>
+| while ( <boolean-operation> ) <block-statement>
+| <block-statement>;
+
+<variable-access> := <defined-by-user-variable> | <ptr-access> <defined-by-user-variable>;
+
+<function-call> := <variable-access> ( <function-parameters*> );
+
+<attribution?> := = <attribution> | ε;
+<attribution> := <arithmetic-operation> | <boolean-operation> | <array-definition> | <expression>;
+
+<function-parameters*> := <attribution> , <function-parameter+> | <attribution> | ε;
+<function-parameter+> := <attribution> , <function-parameter+> | <attribution>;
+
+<expression> := <string>
+| <int>
+| <float>
+| <bool>
+| <char>
+| <variable-access>
+| <ptr-get> <defined-by-user-variable>
+| ( <expression> );
+
+<boolean-operation> := <boolean-unop> <boolean-operation>
+| <comparable> <boolean-binop> <comparable>
+| ( <boolean-operation> ) <boolean-binop> <comparable>
+| <comparable> <boolean-binop> ( <boolean-operation> )
+| ( <boolean-operation> ) <boolean-binop> ( <boolean-operation> );
+<comparable> := <arithmetic-operation> | <expression>;
+
+<arithmetic-operation> := ( <arithmetic-operation> ) | <add> | <sub> | <mul> | <div> | - <arithmetic-operation> | <num>;
+<add> := <num> + <arithmetic-operation> ;
+<sub> := <num> - <arithmetic-operation>;
+<mul> := <num> * <arithmetic-operation>;
+<div> := <num> / <arithmetic-operation>;
+<num> := <float> | <int> | <variable-access>;
+
+
+<array-definition> := [ <expression*> ];
+<expression*> := <expression>, <expression+> | <expression> | ε;
+<expression+> := <expression>, <expression+> | <expression>;
+
+# n'importe quoi qui commence par une lettre
+<declaration-name> := ^[a-zA-Z_][a-zA-Z_0-9]*;
+# n'importe quelle variable existante ( dont les nombres )
+<existing-name> := ^[a-zA-Z_0-9]*;
+# n'importe quelle variable existante ( sans les nombres )
+<defined-by-user-variable> := ^[a-zA-Z_][a-zA-Z_0-9]*;
+<existing-type> := ^[a-zA-Z_][a-zA-Z_0-9]*;
+
+
+<string> := ^".*?";
+<bool> := true | false;
+<binop> := + | - | * | / | % | \u003c | \u003e | \u003c = | \u003e = | = = | ! = | and | or;
+<unop> := - | !;
+<arithmetic-unop> := - ;
+<boolean-unop> := ! ;
+<arithmetic-binop> :=  + | - | * | / | % ;
+<boolean-binop> :=  \u003c | \u003e | \u003c = | \u003e = | = = | ! = | and | or;
+<float> := ^[0-9]+[.][0-9]+;
+<char> := ^['][a-zA-Z]['];
+<int> := ^[0-9]+;
+
+<ptr-access> := *;
+<ptr-get> := &;
+<mutable> := mut;

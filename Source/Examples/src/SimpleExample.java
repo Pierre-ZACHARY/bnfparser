@@ -33,7 +33,15 @@
 
 import ca.uqac.lif.bullwinkle.BnfParser;
 import ca.uqac.lif.bullwinkle.ParseNode;
+import ca.uqac.lif.bullwinkle.ParseNodeVisitor;
 import ca.uqac.lif.bullwinkle.output.GraphvizVisitor;
+import ca.uqac.lif.bullwinkle.output.XmlVisitor;
+
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.Arrays;
 
 public class SimpleExample
 {
@@ -41,15 +49,44 @@ public class SimpleExample
 	{
 		try
 		{
-			BnfParser parser = new BnfParser(SimpleExample.class.getResourceAsStream("Simple-Math.bnf"));
-			ParseNode node2 = parser.parse("(10 + (3 - 4))");
-			GraphvizVisitor visitor = new GraphvizVisitor();
-			node2.prefixAccept(visitor);
-			System.out.println(visitor.toOutputString());
-		}
-		catch (Exception e)
-		{
-			System.err.println("Some error occurred");
+			BnfParser parser = new BnfParser(SimpleExample.class.getResourceAsStream("SAIL3.bnf"));
+
+			Path sailFile = Path.of("sail-examples/cooperate1.sl");
+			String sailInput = Files.readString(sailFile);
+
+			String test = "process Main(){\n" +
+					"        y = x + 3 * 2\n" +
+					"}";
+
+			ParseNode node1 = parser.parse(sailInput);
+
+			if(node1 != null){
+				XmlVisitor visitorXML = new XmlVisitor();
+				node1.prefixAccept(visitorXML);
+				System.out.println(visitorXML.toOutputString());
+			}
+			else{
+				System.err.println("Syntaxe error");
+				System.err.println("READ : '"+parser.last_error_key.split(" ")[0]+"'");
+				System.err.println("EXPECTED : '"+parser.last_errors.get(parser.last_error_key)+"'");
+				System.err.println("AT : "+parser.input_string_error_index+"");
+				int line = 0;
+				int character = parser.input_string_error_index;
+				for(String lines : sailInput.split("\n")){
+					if(character-(lines.length()+1)<0){
+						System.err.println("LINE : "+line+"");
+						System.err.println("CHR : "+character+"");
+						break;
+					}
+					else{
+						character -= lines.length() +1;
+						line +=1;
+					}
+				}
+			}
+
+
+		} catch (BnfParser.InvalidGrammarException | BnfParser.ParseException | ParseNodeVisitor.VisitException | IOException e) {
 			e.printStackTrace();
 		}
 	}

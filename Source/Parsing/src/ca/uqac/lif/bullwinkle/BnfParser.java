@@ -34,14 +34,7 @@ package ca.uqac.lif.bullwinkle;
 
 import java.io.InputStream;
 import java.io.Serializable;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Scanner;
-import java.util.Set;
+import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -343,6 +336,7 @@ public class BnfParser implements Serializable
 				}
 				catch (InvalidRuleException e)
 				{
+					System.err.println("Invalid rule : "+current_rule);
 					scanner.close();
 					throw new InvalidGrammarException(e);
 				}
@@ -482,8 +476,17 @@ public class BnfParser implements Serializable
 		return parse(m_startRule, n_input, 0);
 	}
 
+
+	public HashMap<String, HashSet<Token>> last_errors = new HashMap<>();
+	public String last_error_key = null;
+	public int input_string_error_index = 0;
+	private int total_length = 0;
+
 	private /*@Nullable*/ ParseNode parse(final BnfRule rule, MutableString input, int level) throws ParseException
 	{
+		if(level == 0){
+			total_length = input.length();
+		}
 		if (level > m_maxRecursionSteps)
 		{
 			throw new ParseException("Maximum number of recursion steps reached. If the input string is indeed valid, try increasing the limit.");
@@ -493,9 +496,13 @@ public class BnfParser implements Serializable
 		boolean wrong_symbol = true;
 		boolean read_epsilon = false;
 		log("Considering input '" + input + "' with rule " + rule, level);
+		System.out.println("Considering input '" + input + "' with rule " + rule);
+
 		for (TokenString alt : rule.getAlternatives())
 		{
+			// TODO : pb il s'arrête dès qu'il a une alternative convenable ( donc tout de suite si commence par le mot vide, alors que la bonne se trouve peut être après )
 			log("Alternative " + alt, level);
+			System.out.println("Alternative " + alt);
 			out_node = new ParseNode();
 			NonTerminalToken left_hand_side = rule.getLeftHandSide();
 			out_node.setToken(left_hand_side.toString());
@@ -504,8 +511,7 @@ public class BnfParser implements Serializable
 			Iterator<Token> alt_it = new_alt.iterator();
 			n_input = new MutableString(input);
 			wrong_symbol = false;
-			while (alt_it.hasNext() && !wrong_symbol)
-			{
+			while (alt_it.hasNext() && !wrong_symbol) {
 				n_input.trim();
 				Token alt_tok = alt_it.next();
 				if (alt_tok instanceof TerminalToken)
@@ -542,13 +548,23 @@ public class BnfParser implements Serializable
 					{
 						// Rule expects a token, token in string does not match: NO MATCH
 						wrong_symbol = true;
-						out_node = null;
+						//out_node = null;
+						if(last_error_key == null || !last_error_key.equals(n_input.toString())){
+							last_error_key = n_input.toString();
+						}
+						if(!last_errors.containsKey(last_error_key)){
+							last_errors.put(last_error_key, new HashSet<>());
+						}
+						last_errors.get(last_error_key).add(alt_tok);
+						System.out.println("Read:"+last_error_key+" Expected:"+last_errors.get(last_error_key));
+						input_string_error_index = total_length-n_input.length();
+
 						log("FAILED parsing with case " + new_alt, level);
+						System.out.println("FAILED parsing with case " + new_alt);
 						break;
 					}
 				}
-				else
-				{
+				else {
 					ParseNode child = null;
 					// Non-terminal token: recursively try to parse it
 					String alt_tok_string = alt_tok.toString();
@@ -572,21 +588,22 @@ public class BnfParser implements Serializable
 						{
 							// Parsing failed
 							wrong_symbol = true;
-							out_node = null;
+							//out_node = null;
 							log("FAILED parsing input " + input + " with rule " + rule, level);
+							System.out.println("FAILED parsing input " + input + " with rule " + rule);
 							break;
 						}
 					}
 					out_node.addChild(child);
 				}
 			}
-			if (!wrong_symbol)
-			{
+			if (!wrong_symbol) {
 				if (!alt_it.hasNext())
 				{
 					// We succeeded in parsing the complete string: done
 					if (level > 0 || (level == 0 && n_input.toString().trim().length() == 0))
 					{
+						System.out.println("// We succeeded in parsing the complete string: done");
 						break;
 					}
 				}
@@ -598,6 +615,7 @@ public class BnfParser implements Serializable
 					wrong_symbol = true;
 					n_input = new MutableString(input);
 					log("No symbols left in input; will explore next alternative", level);
+					System.out.println("No symbols left in input; will explore next alternative");
 					break;
 				}
 			}
@@ -607,12 +625,14 @@ public class BnfParser implements Serializable
 		{
 			// We did not consume anything, and the symbol was not epsilon: fail
 			log("FAILED: expected more symbols with rule " + rule, level);
-			return null;    	
+			System.out.println("FAILED: expected more symbols with rule " + rule);
+			return null;
 		}
 		if (chars_consumed == 0 && !read_epsilon)
 		{
 			// We did not consume anything, and the symbol was not epsilon: fail
 			log("FAILED: did not consume anything of " + input + " with rule " + rule, level);
+			System.out.println("FAILED: did not consume anything of " + input + " with rule " + rule);
 			return null;
 		}
 		input.truncateSubstring(chars_consumed);
@@ -620,6 +640,7 @@ public class BnfParser implements Serializable
 		{
 			// The top-level rule must parse the complete string
 			log("FAILED: The top-level rule must parse the complete string", level);
+			System.out.println("FAILED: The top-level rule must parse the complete string");
 			return null;
 		}
 		return out_node;
