@@ -1,6 +1,7 @@
 package ca.uqac.lif.sailTests;
 
 import ca.uqac.lif.bullwinkle.*;
+import ca.uqac.lif.bullwinkle.output.VariableDefinitionVisitor;
 import ca.uqac.lif.bullwinkle.output.XmlVisitor;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
@@ -50,9 +51,14 @@ public class SailTests {
 
         ParseNode result = parser.parse(removeComments(input));
         if(result != null){
-            XmlVisitor visitorXML = new XmlVisitor();
-            result.prefixAccept(visitorXML);
-            System.out.println(visitorXML.toOutputString());
+//            XmlVisitor visitorXML = new XmlVisitor();
+//            result.prefixAccept(visitorXML);
+//            System.out.println(visitorXML.toOutputString());
+
+            VariableDefinitionVisitor test = new VariableDefinitionVisitor(input);
+            result.prefixAccept(test);
+            System.out.println(test.definitionConflicts);
+            System.out.println(test.tokenDefinitionRangeHashMap);
         }
         else{
             System.err.println("Syntaxe error");

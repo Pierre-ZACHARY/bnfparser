@@ -36,7 +36,7 @@
 <semicolon-statement*> ::= '\u007c\u007c' <statement?> | ';' <statement> | ε;
 
 // \u007c = |
-<statement> ::= signal <defined-by-user-variable> <semicolon-statement*>
+<statement> ::= signal <declaration-name> <semicolon-statement*>
 | <block-statement> <statement?>
 | if ( <boolean-operation> ) <block-statement> <statement?>
 | if ( <boolean-operation> ) <block-statement> else <block-statement> <statement?>
