@@ -88,7 +88,7 @@ public class BnfRule implements Serializable
 	public static BnfRule parseRule(String input) throws BnfRule.InvalidRuleException
 	{
 		BnfRule out = new BnfRule();
-		String[] lr = input.split("\\s*:=\\s*");
+		String[] lr = input.split("\\s*::=\\s*");
 		if (lr.length != 2)
 		{
 			throw new InvalidRuleException("Cannot find left- and right-hand side of BNF rule");
@@ -96,10 +96,17 @@ public class BnfRule implements Serializable
 		assert lr.length == 2;
 		String lhs = lr[0].trim();
 		out.setLeftHandSide(new NonTerminalToken(lhs));
-		if (lr[1].startsWith("^"))
+		if (lr[1].startsWith("'^") || lr[1].startsWith("\"^") || lr[1].startsWith("^"))
 		{
+			String content;
+			if(lr[1].startsWith("'^") || lr[1].startsWith("\"^")){
+				content = lr[1].substring(1, lr[1].length()-1);
+			}
+			else{
+				content = lr[1];
+			}
 			// This is a regex line
-			String regex = unescapeString(lr[1]);
+			String regex = unescapeString(content);
 			// Remove semicolon
 			TokenString alternative_to_add = new TokenString();
 			Token to_add = new RegexTerminalToken(regex);

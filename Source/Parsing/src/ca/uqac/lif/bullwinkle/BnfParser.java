@@ -42,6 +42,8 @@ import ca.uqac.lif.bullwinkle.BnfRule.InvalidRuleException;
 import ca.uqac.lif.util.EmptyException;
 import ca.uqac.lif.util.MutableString;
 
+
+
 /**
  * A parser reads a string according to a BNF grammar and produces a
  * parse tree
@@ -312,13 +314,13 @@ public class BnfParser implements Serializable
 		{
 			String line = scanner.nextLine();
 			// Remove comments and empty lines
-			int index = line.indexOf('#');
+			int index = line.indexOf("//");
 			if (index >= 0)
 			{
 				line = line.substring(0, index);
 			}
 			line = line.trim();
-			if (line.isEmpty() || line.startsWith("#"))
+			if (line.isEmpty() || line.startsWith("//"))
 			{
 				continue;
 			}
@@ -477,9 +479,15 @@ public class BnfParser implements Serializable
 	}
 
 
-	public HashMap<String, HashSet<Token>> last_errors = new HashMap<>();
-	public String last_error_key = null;
-	public int input_string_error_index = 0;
+	public HashMap<Integer, UnexpectedTokenError> read_index; // index : input : list < expected tokens at this index >
+
+	public void reset_errors(){
+		read_index = new HashMap<>();
+	}
+
+	public UnexpectedTokenError getDeepestError(){
+		return read_index.get(Collections.max(read_index.keySet()));
+	}
 	private int total_length = 0;
 
 	private /*@Nullable*/ ParseNode parse(final BnfRule rule, MutableString input, int level) throws ParseException
@@ -551,17 +559,12 @@ public class BnfParser implements Serializable
 						//out_node = null;
 						int currentindex = total_length-n_input.length();
 
-						// we keep the deepest error
-						if(last_error_key == null || input_string_error_index<currentindex && !last_error_key.equals(n_input.toString())){
-							last_error_key = n_input.toString();
+
+						if(!read_index.containsKey(currentindex)){
+							read_index.put(currentindex, new UnexpectedTokenError(n_input.toString(), currentindex));
 						}
-						if(last_error_key.equals(n_input.toString())){
-							if(!last_errors.containsKey(last_error_key)){
-								last_errors.put(last_error_key, new HashSet<>());
-							}
-							last_errors.get(last_error_key).add(alt_tok);
-							input_string_error_index = currentindex;
-						}
+						HashSet<Token> tokens = read_index.get(currentindex).expected_tokens;
+						tokens.add(alt_tok);
 
 
 						log("FAILED parsing with case " + new_alt, level);

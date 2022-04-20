@@ -103,7 +103,12 @@ public abstract class Token implements Serializable
 	{
 		if (name != null)
 		{
-			m_name = name;
+			if(name.startsWith("'") && name.endsWith("'") || name.startsWith("\"") && name.endsWith("\"")){
+				m_name = name.substring(1, name.length()-1);
+			}
+			else{
+				m_name = name;
+			}
 		}
 	}
 

@@ -1,10 +1,7 @@
 package ca.uqac.lif.sailTests;
 
-import ca.uqac.lif.bullwinkle.BnfParser;
-import ca.uqac.lif.bullwinkle.ParseNode;
-import ca.uqac.lif.bullwinkle.ParseNodeVisitor;
+import ca.uqac.lif.bullwinkle.*;
 import ca.uqac.lif.bullwinkle.output.XmlVisitor;
-import org.junit.Assert;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -49,6 +46,8 @@ public class SailTests {
     public void resolve() throws ParseNodeVisitor.VisitException, BnfParser.ParseException {
         System.out.println("After Each resolve() method called");
 
+        parser.reset_errors();
+
         ParseNode result = parser.parse(removeComments(input));
         if(result != null){
             XmlVisitor visitorXML = new XmlVisitor();
@@ -57,11 +56,13 @@ public class SailTests {
         }
         else{
             System.err.println("Syntaxe error");
-            System.err.println("READ : '"+parser.last_error_key.split(" ")[0]+"'");
-            System.err.println("EXPECTED : '"+parser.last_errors.get(parser.last_error_key)+"'");
-            System.err.println("AT : "+parser.input_string_error_index+"");
+            UnexpectedTokenError lasterror = parser.getDeepestError();
+            String last_error_key = (String) lasterror.input_string;
+            System.err.println("READ : '"+last_error_key.split(" ")[0]+"'");
+            System.err.println("EXPECTED : '"+lasterror.expected_tokens+"'");
+            System.err.println("AT : "+lasterror.start_index+"");
             int line = 0;
-            int character = parser.input_string_error_index;
+            int character = lasterror.start_index;
             for(String lines : input.split("\n")){
                 if(character-(lines.length()+1)<0){
                     System.err.println("LINE : "+line+"");
@@ -74,6 +75,7 @@ public class SailTests {
                 }
             }
         }
+
         Assertions.assertNotNull(result);
     }
 
