@@ -1,8 +1,7 @@
 package ca.uqac.lif.sailTests;
 
 import ca.uqac.lif.bullwinkle.*;
-import ca.uqac.lif.bullwinkle.output.VariableDefinitionVisitor;
-import ca.uqac.lif.bullwinkle.output.XmlVisitor;
+import ca.uqac.lif.bullwinkle.output.sail.VariableDefinitionVisitor;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -59,6 +58,8 @@ public class SailTests {
             result.prefixAccept(test);
             System.out.println(test.definitionConflicts);
             System.out.println(test.tokenDefinitionRangeHashMap);
+            System.out.println(test.structDefinitionHashMap);
+            System.out.println(test.methodDefinitionHashMap);
         }
         else{
             System.err.println("Syntaxe error");

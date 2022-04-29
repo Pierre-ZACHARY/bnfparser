@@ -1,4 +1,4 @@
-package ca.uqac.lif.bullwinkle.output;
+package ca.uqac.lif.bullwinkle.output.sail;
 
 public class InputFileToken {
     public String content;

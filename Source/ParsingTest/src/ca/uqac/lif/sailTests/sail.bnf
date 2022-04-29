@@ -11,17 +11,18 @@
 
 <enum-declaration> ::= enum <declaration-name> { <enum-name-declaration?> } ;
 <enum-name-declaration?> ::= <enum-name-declaration> | ε;
-<enum-name-declaration> ::= <declaration-name> ',' <declaration-name> | <declaration-name>;
-<struct-declaration> ::= struct <declaration-name> { <struct-atributes-declaration?> };
-<struct-atributes-declaration?> ::= <struct-atributes-declaration> | ε;
-<struct-atributes-declaration> ::= <declaration-name> <type-declaration> ',' <struct-atributes-declaration> | <declaration-name> <type-declaration>;
+<enum-name-declaration> ::= <declaration-name> ',' <enum-name-declaration> | <declaration-name>;
+<struct-declaration> ::= struct <declaration-name> { <struct-attributes-declaration?> };
+<struct-attributes-declaration?> ::= <struct-attributes-declaration> | ε;
+<struct-attributes-declaration> ::= <declaration-name> <type-declaration> ',' <struct-attributes-declaration> | <declaration-name> <type-declaration>;
 <process-declaration> ::= process <declaration-name> ( <function-parameters-declaration*> ) <block-statement>;
-<method-declaration> ::= method <declaration-name> ( <function-parameters-declaration*> ) <type-declaration?> <block-statement>;
+<method-declaration> ::= method <declaration-name> ( <function-parameters-declaration*> ) <block-statement> | method <method-with-type-declaration>;
+<method-with-type-declaration> ::= <declaration-name> ( <function-parameters-declaration*> ) <type-declaration> <block-statement>; // je met ça en amont car c'est plus simple pour le parser de savoir que la method prendra un type avant la déclaration de son nom
 
 <function-parameters-declaration*> ::= <function-parameters-declaration> ',' <function-parameters-declaration*> | <function-parameters-declaration> | ε;
 <function-parameters-declaration> ::= <declaration-name> <type-declaration> ;
 
-<type-declaration?> ::= <type-declaration> | ε;
+//<type-declaration?> ::= <type-declaration> | ε;
 // - `<` can be replaced by `\u003c`
 // - `>` can be replaced by `\u003e`
 <type-declaration> ::= ':' <type> '\u003c' <type> '\u003e' | ':' <type> ;
@@ -36,7 +37,7 @@
 <semicolon-statement*> ::= '\u007c\u007c' <statement?> | ';' <statement> | ε;
 
 // \u007c = |
-<statement> ::= signal <declaration-name> <semicolon-statement*>
+<statement> ::= <signal-declaration>
 | <block-statement> <statement?>
 | if ( <boolean-operation> ) <block-statement> <statement?>
 | if ( <boolean-operation> ) <block-statement> else <block-statement> <statement?>
@@ -55,6 +56,8 @@
 | return
 | <function-call> <semicolon-statement*>;
 
+<signal-declaration> ::= signal <declaration-name> <semicolon-statement*>;
+
 <variable-access> ::= <object-attribute-access> | <array-access> | <defined-by-user-variable> | <ptr-access> <defined-by-user-variable>;
 <array-access> ::= <defined-by-user-variable> [ <expression*> ];
 <object-attribute-access> ::= <defined-by-user-variable> '.' <defined-by-user-variable>;
@@ -64,9 +67,9 @@
 <is-equal-to-attribution?> ::= '=' <attribution> | ε;
 <attribution> ::= <struct-object-instanciation> | <function-call> | <arithmetic-operation> | <boolean-operation> | <array-definition> | <expression>;
 
-<struct-object-instanciation> ::= <defined-by-user-variable> { <struct-atributes-definition?> };
-<struct-atributes-definition?> ::= <struct-atributes-definition> | ε;
-<struct-atributes-definition> ::= <defined-by-user-variable> ':' <attribution> ',' <struct-atributes-definition> | <defined-by-user-variable> ':' <attribution>;
+<struct-object-instanciation> ::= <defined-by-user-variable> { <struct-attributes-definition?> };
+<struct-attributes-definition?> ::= <struct-attributes-definition> | ε;
+<struct-attributes-definition> ::= <defined-by-user-variable> ':' <attribution> ',' <struct-attributes-definition> | <defined-by-user-variable> ':' <attribution>;
 
 
 <function-parameters*> ::= <attribution> ',' <function-parameter+> | <attribution> | ε;
